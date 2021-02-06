@@ -1,34 +1,8 @@
 'use strict'
-// 熟語を20個取ってくる
-const jukugos = randomArray(fullJukugo, 20)
-// 重複のない文字にばらす
-const kanjis = (function (){
-    const chars = uniqueChars(jukugos.join(''))
-    return randomArray(chars, chars.length)
-  })();
-
-const buttonIdPrefix = "kanji" // 漢字ボタンのIDの頭に付ける
-const players = {  // q:リストを選択できるquery
-    A:{name:"A", q:"#a-list"}, 
-    B:{name:"B", q:"#b-list"},
-	getByName: function(name){
-	  if(this.A.name === name){ return this.A }
-	  if(this.B.name === name){ return this.B }
-	  return; // undefined
-	},
-	getOpponentByName: function(name){
-	  if(this.A.name === name){ return this.B }
-	  if(this.B.name === name){ return this.A }
-	  return; // undefined
-	},
-  }
-var selectedKanjiIds = [] // 選択されている漢字ボタンのID
-const qs = (q) => document.querySelector(q) // 長いので
-
-
 window.addEventListener("load", function(){
   // 漢字ボタンをfree-listに配置
-  kanjis.map((text, i) => appendButton(qs('#free-list'), text, i))
+  kanjis.map((text, i) => appendKanjiButton(qs('#free-list'), text, i))
+  
   // 白紙にするボタン
   qs('#clear-button').addEventListener("click", () =>{
     qs('#input-text').value = "" // 回答エリアを空にして
@@ -37,53 +11,55 @@ window.addEventListener("load", function(){
   
   // 回答ボタン
   qs('#judge-button').addEventListener("click", () =>{
-	const thisBtn = qs('#judge-button')
-	const ansr = players.getByName(thisBtn.value)
-    const isValid = fullJukugo.some(item => item === qs('#input-text').value)
-	if(isValid){
+	const judgeBtn = qs('#judge-button')
+	const ansr = players.getByName(judgeBtn.value)
+	if(isValidJukugo(qs('#input-text').value, selectedKanjiIds)){
 	  // ボタンの移動
 	  selectedKanjiIds = [...new Set(selectedKanjiIds)] // 重複を消す
 	  selectedKanjiIds.map(id => { qs(ansr.q).appendChild(qs('#'+id)) })
 	}
 	qs('#clear-button').click() //  回答エリアを空に、選択状態を白紙に
-	const opponent = players.getOpponentByName(ansr.name) // 回答権を相手に
-	thisBtn.value = opponent.name
-	thisBtn.innerText = opponent.name + "の回答"
+	const opponent = players.getOpponentByName(ansr.name)
+	judgeBtn.value = opponent.name  // 漢字ボタンのvalueは所有者を表す
+	judgeBtn.innerText = opponent.name + "の回答"
   })
   
+  // お知らせ欄をクリックしたら消える
+  qs('#information-text').addEventListener("click", () => {
+    qs('#information-text').value = ""
+  })
   // メモ: 指標A==被ってた文字数(少なくともn文字は取り合いが発生しうる)
   qs('#note').innerText += "指標A="+(jukugos.join('').match(/./g).length - kanjis.length)
   qs('#note').innerText += ", 文字数=" + kanjis.length
 }, false)
 
-
-
-// fullArrから無作為に重複しないnum個選択したサブセットを返す。
-// numをfullArr.lengthにすれば順番をランダムにすることもできる。
-function randomArray(fullArr, num){
-  const seq = [...Array(fullArr.length).keys()]
-  let arr = []
-  let iSeq
-  for(let i=0; i < num; i++){
-	iSeq = Math.floor(Math.random() * seq.length)
-    arr.push(fullArr[seq[iSeq]])
-	seq.splice(iSeq, 1)  // sequenseからは削除
+// 辞書にあるか。かつ、少なくとも1文字が未取得漢字か。 // 副作用として、エラーメッセージを表示する
+function isValidJukugo(jukugo, kanjiIds){
+  // 少なくとも1文字が手つかずに入ってるか // 選択された漢字のIDが未取得漢字IDsに含まれるか
+  const freeIds = []
+　　qsAll('#free-list button').forEach(i => freeIds.push(i.id))
+  if(!kanjiIds.some(v => freeIds.includes(v))){
+	  qs('#information-text').value = "手つかずな漢字を1字以上選んでください。"
+	  setTimeout( ()=>{qs('#information-text').click()}, 3000 ) // 2.5s後に間違うと0.5s後に消える
+	  return false
   }
-  return arr
-}
-// 文字列を重複ない1文字の配列にする
-function uniqueChars(str){
-  return [...new Set(str.match(/./g))]
+  // 辞書にあるか
+  if(!fullJukugo.some(v => v === jukugo)){
+	  qs('#information-text').value = "辞書にない熟語です。"
+	  setTimeout( ()=>{qs('#information-text').click()}, 3000 )
+	  return false
+  }
+  return true
 }
 
 // textをinnerTextにしたbuttonを作成、parentに加える。
 // buttonをクリックしたら回答エリアに文字を追加する。
 // 同じ漢字は複数回使用できる。
-function appendButton(parent, text, idNum){
+function appendKanjiButton(parent, text, idNum){
   const id = buttonIdPrefix + idNum
   const btn = document.createElement('button')
   btn.innerText = text
-  btn.value = "free" // 漢字ボタンのvalueは所有者を表す
+  btn.value = fields.Free // 漢字ボタンのvalueは所有者を表す
   btn.id = id
   btn.addEventListener("click", () => {
     qs('#input-text').value += text // 回答エリアに文字を追加
