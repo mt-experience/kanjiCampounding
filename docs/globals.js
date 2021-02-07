@@ -28,6 +28,18 @@ const qs = (q) => document.querySelector(q) // 長いので
 const qsAll = (q) => document.querySelectorAll(q)
 
 
+// 漢字が被りやすい熟語の選定
+// 熟語5個を取ってきて、漢字が被る4つを取ってくるなど
+function smartSelect(fullArr, baseNum, bringNum){
+  const base = randomArray(fullArr, baseNum)
+  // 1語ずつ uniqueChars して、fullArrの各語と比較。一致件数が多いものからとってくる
+  // ただし、最も一致するのはその語自身なので除外。
+  // uniqueChars(b).sort // [亜,帯,熱]
+  base.map(b => {
+    uniqueChars(b).sort()
+  })
+}
+
 // fullArrから無作為に重複しないnum個選択したサブセットを返す。
 // numをfullArr.lengthにすれば順番をランダムにすることもできる。
 function randomArray(fullArr, num){
