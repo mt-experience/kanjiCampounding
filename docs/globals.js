@@ -3,9 +3,11 @@
 const fullJukugo = (arr => arr.map(x => x[4]))(db)
 // 熟語選出用  // 熟語選出スコアは既に選んだ熟語と重複度が高いと高くなる。
 const fullUniqsort = (arr => arr.map(x => x[5]))(db) // 重複度計算用 
+// インデックスがほしいのでスコアは2次元配列  // [0:インデックス, 1:スコア]
 let jukugoScore = Array(fullUniqsort.length).fill(0)
-// 熟語を20個取ってくる
-const jukugos = randomArray(fullJukugo, 20)
+jukugoScore.map((v,i) => jukugoScore[i] = [i,0])
+// 熟語を30個取ってくる
+const jukugos = smartSelect(fullJukugo, 5, 25)
 // 重複のない文字にばらす
 const kanjis = (function (){
     const chars = uniqueChars(jukugos.join(''))
@@ -34,24 +36,26 @@ const qsAll = (q) => document.querySelectorAll(q)
 
 
 // 漢字が被りやすい熟語の選定
-// 熟語5個を取ってきて、漢字が被る4つを取ってくるなど
+// 熟語5個を取ってきて、漢字が被る(ことを示すスコアが高い)15個取ってくるなど
 function smartSelect(fullArr, baseNum, bringNum){
   const base = randomArray(fullArr, baseNum)
   // 1語ずつ uniqueChars して、fullArrの各語と比較。一致件数が多いものからとってくる
-  // ただし、最も一致するのはその語自身なので除外。
-  // uniqueChars(b).sort // [亜,帯,熱]
-  // filter?
-  base.map( b => {
-    fullUniqsort.map(uiqs => calcMulti(b, uiqs))
-	
-  })
+  // base単語から全熟語のスコアを計算する。
+  base.map( b => addScore(b))
+  // 合格点以上のものをランダムにbringNum個取ってくる
+  const pass = jukugoScore.concat().sort((a,b)=>b[1]-a[1]).slice(bringNum-1, bringNum)[0][1]
+  const juk = randomArray(jukugoScore.filter(v => v[1] >= pass) , bringNum)
+                  .map(arr => fullJukugo[arr[0]])
+  return base.concat(juk)
 }
-// 重複度(Multiplicity)を計算する。
-// [亜熱帯],[亜寒帯] -> 2  // [十人十色],[十中八九] -> 1
-function calcMulti(str, nodupStr){
-  let degree = 0
-  uniqueChars(str).sort().map(s => {degree += nodupStr.includes(s) ?1:0})
-  return degree
+// 重複度(Multiplicity)を計算する。選定スコアに加算する。
+// 「入力単語の各文字」に対して「全熟語」のスコアを計算する。文字列長*DBサイズのコスト。
+// 1:1の重複度は[亜熱帯],[亜寒帯] -> 2  // [十人十色],[十中八九] -> 1
+function addScore(str){
+  uniqueChars(str).map( s => {
+	// jukugoScore[i][1] スコア
+    fullUniqsort.map((word,i) => jukugoScore[i][1] += word.includes(s)?1:0 )
+  })
 }
 
 // fullArrから無作為に重複しないnum個選択したサブセットを返す。
