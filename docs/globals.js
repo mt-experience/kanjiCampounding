@@ -1,4 +1,9 @@
 'use strict'
+// 全ての熟語。判定にも使う。4列目。
+const fullJukugo = (arr => arr.map(x => x[4]))(db)
+// 熟語選出用  // 熟語選出スコアは既に選んだ熟語と重複度が高いと高くなる。
+const fullUniqsort = (arr => arr.map(x => x[5]))(db) // 重複度計算用 
+let jukugoScore = Array(fullUniqsort.length).fill(0)
 // 熟語を20個取ってくる
 const jukugos = randomArray(fullJukugo, 20)
 // 重複のない文字にばらす
@@ -35,9 +40,18 @@ function smartSelect(fullArr, baseNum, bringNum){
   // 1語ずつ uniqueChars して、fullArrの各語と比較。一致件数が多いものからとってくる
   // ただし、最も一致するのはその語自身なので除外。
   // uniqueChars(b).sort // [亜,帯,熱]
-  base.map(b => {
-    uniqueChars(b).sort()
+  // filter?
+  base.map( b => {
+    fullUniqsort.map(uiqs => calcMulti(b, uiqs))
+	
   })
+}
+// 重複度(Multiplicity)を計算する。
+// [亜熱帯],[亜寒帯] -> 2  // [十人十色],[十中八九] -> 1
+function calcMulti(str, nodupStr){
+  let degree = 0
+  uniqueChars(str).sort().map(s => {degree += nodupStr.includes(s) ?1:0})
+  return degree
 }
 
 // fullArrから無作為に重複しないnum個選択したサブセットを返す。
