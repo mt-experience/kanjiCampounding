@@ -1,0 +1,24 @@
+body{
+  width:95%;
+  margin-right: auto;
+  margin-left : auto;
+}
+
+div.field{
+  /* 漢字が横に広がりすぎないように */
+  width:60%;
+}
+
+div#main-area{
+  display: flex;
+}
+
+div#fields{
+  width:40%;
+}
+
+div#selected-jukugo{
+  width:40%;
+}
+
+
