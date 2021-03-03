@@ -1,9 +1,10 @@
 body{
-width:90%;
-margin-right: auto;
-margin-left : auto;
+  width:90%;
+  margin-right: auto;
+  margin-left : auto;
 }
 
 div.field{
-width:20%;
+  /* 漢字が横に広がりすぎないように */
+  width:20%;
 }
